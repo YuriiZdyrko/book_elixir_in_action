@@ -1,0 +1,36 @@
+Elixir has no String type.
+Strings are represented using Binary or List.
+
+Binary - a chunk(sequence) of bytes, byte-size can be specified with ::
+<<257::16>>
+<<257::utf8>>
+<<1, 1::4>>
+
+Be default byte size is 8, so 257 = 257-255 = 1
+
+<<257>>
+<<1>>
+EQUIVALENT TO:
+<<257::1>>
+<<1>>
+
+<<257::utf8>>
+"ā"
+
+<<257::16>>
+<<1, 1>>
+
+<<"asdf">> == "asdf" => TRUE
+
+
+<<234::16>>, <<234::8>> - ByteString
+<<234::4>>, <<234::1>> - BitString
+
+using character lists
+only when some third-party library
+so NEVER USE CHAR LIST :)
+
+
+<<b1::utf8, rest::binary>> = "юра"
+b1 = 1073 ....
+List.to_string([b1]) => "ю"

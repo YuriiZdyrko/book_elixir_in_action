@@ -1,0 +1,11 @@
+Push repeatedly in front of list
+[:new_elem | list]
+and then reverse it in the end.
+INSTEAD OF:
+Than append to the end of list (list ++ [:new_elem])
+
+In Elixir function can't modify a value of a variable!!!
+Any variable!!!
+
+A map is a key/value store, where keys and values can be any term. Maps have dual
+usage in Elixir.

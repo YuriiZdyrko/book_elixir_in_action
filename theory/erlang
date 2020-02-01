@@ -1,0 +1,9 @@
+Erlang is
+- language (Erlang or Elixir)
+- virtual machine (BEAM)
+- framework (OTP) - concurrency/distribution/packaging/deployment/live updates
+- tools
+
+iex starts instance of BEAM
+
+new_list = [:new_element | a_list]

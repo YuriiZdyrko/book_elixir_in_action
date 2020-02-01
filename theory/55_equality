@@ -1,0 +1,7 @@
+1 == 1.0
+1 === 1.0
+
+Only place where there's difference
+
+|> Kernel.||
+|> ...
