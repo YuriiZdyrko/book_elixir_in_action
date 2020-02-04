@@ -22,3 +22,9 @@ A server process does:
 ¡ Maintain the process state
 ¡ React to messages
 ¡ Send a response back to the caller
+
+List all (including macro-generated) functions
+MyModule.__info__(:functions)
+
+[child_spec: 1, code_change: 3, handle_call: 3, handle_cast: 2,
+handle_info: 2, init: 1, terminate: 2]
