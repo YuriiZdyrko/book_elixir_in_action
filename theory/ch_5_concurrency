@@ -1,0 +1,17 @@
+High availability = 
+    Fault-tolerance
+    Scalability
+    Distribution
+
+send expression -> Puts message in PID mailbox
+receive expression -> Pulls message from a mailbox.
+
+Basically send, and receive just write/read mailbox
+
+
+Server process - runs indefinitely, has state.
+Interface functions - public, executed in caller process.
+Implementation functions - private, executed in server process. 
+
+Functional programming - always keep value in a variable
+Concurrent programming - always keep pid in a variable

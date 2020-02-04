@@ -9,3 +9,6 @@ Any variable!!!
 
 A map is a key/value store, where keys and values can be any term. Maps have dual
 usage in Elixir.
+
+
+Comprehensions = Enum.into AND [ cartesian product, filtering ]
