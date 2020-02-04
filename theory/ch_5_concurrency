@@ -15,3 +15,10 @@ Implementation functions - private, executed in server process.
 
 Functional programming - always keep value in a variable
 Concurrent programming - always keep pid in a variable
+
+A server process does:
+¡ Spawn a separate process
+¡ Run an infinite loop in the process
+¡ Maintain the process state
+¡ React to messages
+¡ Send a response back to the caller
