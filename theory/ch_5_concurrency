@@ -1,21 +1,25 @@
+1.
 High availability = 
     Fault-tolerance
     Scalability
     Distribution
 
+2.
 send expression -> Puts message in PID mailbox
 receive expression -> Pulls message from a mailbox.
 
 Basically send, and receive just write/read mailbox
 
-
+3.
 Server process - runs indefinitely, has state.
 Interface functions - public, executed in caller process.
 Implementation functions - private, executed in server process. 
 
+4.
 Functional programming - always keep value in a variable
 Concurrent programming - always keep pid in a variable
 
+5.
 A server process does:
 ¡ Spawn a separate process
 ¡ Run an infinite loop in the process
@@ -23,8 +27,16 @@ A server process does:
 ¡ React to messages
 ¡ Send a response back to the caller
 
+6.
 List all (including macro-generated) functions
 MyModule.__info__(:functions)
 
 [child_spec: 1, code_change: 3, handle_call: 3, handle_cast: 2,
 handle_info: 2, init: 1, terminate: 2]
+
+7.
+@impl GenServer
+def handle_call
+
+Using @impl allows compile-time checking of arguments. 
+Use @impl if behaviour is used!
