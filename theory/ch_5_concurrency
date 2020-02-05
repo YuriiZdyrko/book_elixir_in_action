@@ -40,3 +40,35 @@ def handle_call
 
 Using @impl allows compile-time checking of arguments. 
 Use @impl if behaviour is used!
+
+8. Regarding additional init work
+
+def init(params) do
+    Sends itself a message
+    send(self(), :real_init)
+    {:ok, nil}
+end
+
+This technique will generally work as long as your process isn’t registered under a
+local name. If the process isn’t registered, someone has to know its pid to send it a mes-
+sage, and that pid will only be known after init/1 has finished. Hence, you can be sure
+that the message you send to yourself is the first one being handled.
+
+But if process needs to be registered, there's workaround:
+
+def init(params) do
+    ...
+    send(self(), :real_init)
+    register(self(), :some_name)
+end
+
+9. Reasons for running code in a dedicated process
+- The code must manage a long-living state.
+- The code handles a kind of a resource that can and should be reused, such as a TCP
+connection, database connection, file handle, pipe to an OS process, and so on.
+- A critical section of the code must be synchronized. Only one process may run
+this code in any moment.
+
+10. Pooling - a remedy for unbounded concurrency.
+For example - prevent too many simultaneous database requests.
+Ecto internally relies on a Poolboy!
