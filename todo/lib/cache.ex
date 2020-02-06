@@ -1,5 +1,6 @@
 defmodule Todo.Cache do
   use GenServer
+  import IEx
 
   def start do
     GenServer.start(__MODULE__, nil, name: __MODULE__)
@@ -22,6 +23,7 @@ defmodule Todo.Cache do
         {:reply, todo_server, todo_servers}
 
       :error ->
+        IEx.pry()
         {:ok, new_server} = Todo.Server.start(todo_list_name)
 
         {
