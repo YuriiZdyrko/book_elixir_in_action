@@ -72,3 +72,5 @@ this code in any moment.
 10. Pooling - a remedy for unbounded concurrency.
 For example - prevent too many simultaneous database requests.
 Ecto internally relies on a Poolboy!
+
+Casts can overload the machine, if large number is invoked at once.

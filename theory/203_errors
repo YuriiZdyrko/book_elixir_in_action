@@ -1,0 +1,13 @@
+raise
+
+exit - exits process
+
+throw - use for non-local returns (i.e. exit recursion)
+
+try do
+...
+catch error_type, error_value ->
+...
+end
+
+error_type = :error, :exit or :throw

@@ -1,9 +1,9 @@
 defmodule Todo.Cache do
   use GenServer
-  import IEx
 
-  def start do
-    GenServer.start(__MODULE__, nil, name: __MODULE__)
+  def start_link(_) do
+    IO.puts("Starting to-do cache.")
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   def server_process(todo_list_name) do
@@ -12,7 +12,7 @@ defmodule Todo.Cache do
 
   def init(_) do
     # Ensure db is started
-    Todo.Database.start()
+    Todo.Database.start_link(nil)
 
     {:ok, %{}}
   end
@@ -23,8 +23,7 @@ defmodule Todo.Cache do
         {:reply, todo_server, todo_servers}
 
       :error ->
-        IEx.pry()
-        {:ok, new_server} = Todo.Server.start(todo_list_name)
+        {:ok, new_server} = Todo.Server.start_link(todo_list_name)
 
         {
           :reply,

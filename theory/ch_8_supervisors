@@ -1,0 +1,52 @@
+Supervisor = list of child specifications and supervision strategy.
+
+3 ways to start supervisor:
+
+- Supervisor.start_link
+
+Supervisor.start_link(
+    [Todo.Cache], 
+    strategy: :one_for_one
+)
+Supervisor.start_link(
+    [{Todo.Cache, nil}],
+    strategy: :one_for_one
+)
+
+- module-based approach
+
+defmodule Todo.System do
+    def start_link do
+        Supervisor.start_link(
+            [Todo.Cache],
+            strategy: :one_for_one
+        )
+    end
+end
+
+- callback module
+
+
+defmodule Todo.System do
+    use Supervisor
+
+    def start_link do
+        Supervisor.start_link(__MODULE__,  nil)
+    end
+
+    def init(_) do
+        Supervisor.init([Todo.Cache], strategy: :one_for_one)
+    end
+end
+
+Debug:
+
+Provoke crash:
+cache_pid = Process.whereis(Todo.Cache)
+Process.exit cache_pid, :kill
+
+:erlang.system_info(:process_count)
+
+
+
+2. To limit restarting frequency, pass max_restarts and max_seconds to Supervisor.start_link
