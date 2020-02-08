@@ -1,78 +1,69 @@
 defmodule Todo.Database do
-  use GenServer
-
   @db_folder "./persist"
   @num_workers 3
 
-  def start_link(_) do
-    workers =
-      1..@num_workers
-      |> Enum.map(fn i ->
-        {:ok, pid} = Todo.DatabaseWorker.start_link(@db_folder)
-        {i, pid}
-      end)
-      |> Enum.into(%{})
+  def start_link() do
+    File.mkdir_p!(@db_folder)
+    children = Enum.map(1..@num_workers, &worker_spec/1)
+    Supervisor.start_link(children, strategy: :one_for_one)
+  end
 
-    GenServer.start_link(__MODULE__, workers, name: __MODULE__)
+  defp worker_spec(worker_id) do
+    default_worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
+    Supervisor.child_spec(default_worker_spec, id: worker_id)
+  end
+
+  def child_spec(_) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, []},
+      type: :supervisor
+    }
   end
 
   def store(key, data) do
-    GenServer.cast(__MODULE__, {:store, key, data})
+    key
+    |> choose_worker()
+    |> Todo.DatabaseWorker.store(key, data)
   end
 
   def get(key) do
-    GenServer.call(__MODULE__, {:get, key})
+    key
+    |> choose_worker()
+    |> Todo.DatabaseWorker.get(key)
   end
 
-  def choose_worker(pool, key) do
-    Map.fetch!(pool, :erlang.phash2(key, 3))
-  end
-
-  @impl GenServer
-  def init(state) do
-    File.mkdir_p!(@db_folder)
-    {:ok, state}
-  end
-
-  @impl GenServer
-  def handle_cast({:store, key, data}, state) do
-    worker = choose_worker(state, key)
-
-    Todo.DatabaseWorker.store(worker, key, data)
-
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_call({:get, key}, _, state) do
-    worker = choose_worker(state, key)
-
-    {:reply, Todo.DatabaseWorker.get(worker, key), state}
+  def choose_worker(key) do
+    :erlang.phash2(key, @num_workers)
   end
 end
+
 
 defmodule Todo.DatabaseWorker do
   use GenServer
 
-  def start_link(db_folder) do
+  def start_link({db_folder, worker_id}) do
     IO.puts("Starting Database worker")
-    GenServer.start_link(__MODULE__, db_folder, [])
+
+    name = Todo.ProcessRegistry.via_tuple({__MODULE__, worker_id})
+
+    GenServer.start_link(__MODULE__, db_folder, [name: name])
   end
 
-  def store(pid, key, data) do
-    GenServer.cast(pid, {:store, key, data})
+  def store(worker_id, key, data) do
+    GenServer.cast(worker_id, {:store, key, data})
   end
 
-  def get(pid, key) do
-    GenServer.call(pid, {:get, key})
+  def get(worker_id, key) do
+    GenServer.call(worker_id, {:get, key})
   end
 
-  @impl GenServer
+  # @impl GenServer
   def init(folder) do
     {:ok, folder}
   end
 
-  @impl GenServer
+  # @impl GenServer
   def handle_cast({:store, key, data}, state) do
     file_name(state, key)
     |> File.write!(:erlang.term_to_binary(data))
@@ -80,7 +71,7 @@ defmodule Todo.DatabaseWorker do
     {:noreply, state}
   end
 
-  @impl GenServer
+  # @impl GenServer
   def handle_call({:get, key}, _, state) do
     data =
       case File.read(file_name(state, key)) do

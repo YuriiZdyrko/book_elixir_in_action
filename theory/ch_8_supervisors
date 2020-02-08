@@ -1,4 +1,7 @@
 Supervisor = list of child specifications and supervision strategy.
+Supervisor has 2 roles:
+- restart failing process (bottom up), :restart option in child_spec
+- terminate tree (top down), :strategy option in Supervisor.start_link
 
 3 ways to start supervisor:
 
@@ -13,7 +16,7 @@ Supervisor.start_link(
     strategy: :one_for_one
 )
 
-- module-based approach
+- module-based approach (should be used only on top of supervision tree)
 
 defmodule Todo.System do
     def start_link do
@@ -24,7 +27,7 @@ defmodule Todo.System do
     end
 end
 
-- callback module
+- callback module (Superior approach)
 
 
 defmodule Todo.System do
@@ -50,3 +53,63 @@ Process.exit cache_pid, :kill
 
 
 2. To limit restarting frequency, pass max_restarts and max_seconds to Supervisor.start_link
+
+
+3. Design: 
+investigate how crash in any part of the system will affect the rest of the system.
+Take into account that frequent crashes of children can take down supervisor. 
+Especially relevant if Supervisor has large number of children.
+A more granular tree allows to take down an arbitrary part of the system, without
+touching anything else
+
+4. use "def child_spec" to prepare singleton process for supervision
+   use Enum.map + "Supervisor.child_spec" to prepare pool of processes for supervision
+
+
+                Supervisor1 (:one_for_one, max_restarts: 2, max_seconds: 4)
+                    |
+                Supervisor2 (:one_for_one, max_restarts: 2, max_seconds: 2)
+                    |
+                   / \
+                wrk1 wrk2(FAIL!)
+
+- wrk2 FAILS
+- Supervisor2 restarts wrk2
+- wrk2 FAILS 3 times in 2 seconds
+- Supervisor2 FAILS due to max_restarts of wrk2
+- Supervisor1 restarts Supervisor2, which restarts Workers
+- wrk2 keeps failing 3 times in 2 seconds
+- System goes DOWN, as Supervisor1 max_restarts is reached by failing Supervisor2.
+
+
+OTP
+Only OTP-compliant process can be started from Supervisor.
+
+Types of OTP-compliant processes: 
+- GenServer,
+- Supervisor,
+- Agent,
+- Task,
+- GenStage,
+- Phoenix.Channel 
+
+Not OTP-compliant - spawn, spawn_link
+
+
+child_spec:
+    id:
+    start:
+    restart:
+        :permanent (always) - default for GenServer, Supervisor, Agent
+        :temporary (all exits except :normal) - default for Task
+        :transient (all exits including :normal)
+    shutdown:
+        time in milliseconds (default for worker) - a graceful termination
+            (is used in conjunction with trapping exits and terminate callback)
+        
+        :infinity (default for supervisor)
+            (is used for supervisors, allows all children to terminate,
+            may result in never-terminating application, not good...)
+        
+        :brutal_kill
+

@@ -1,0 +1,26 @@
+Process Registry allows complex names (any Erlang term).
+Registry links to all registered processes, 
+and unregisters if process go down.
+
+Registry is a process:
+
+1. Start Registry process:
+Registry.start_link(name: :my_registry, keys: :unique)
+
+Keys - :unique or :duplicate (for pub/sub).
+
+2. Register processes:
+Registry.register(:my_registry, {:database_worker, 1}, nil)
+OR (for singleton process)
+GenServer.start_link(__MODULE__, nil, name: {:via, registry_module, some_arg})
+
+In case of Registry, some_arg = {registry_name_atom, process_key_term}
+
+Registry maps self() to {:database_worker, 1}
+
+3. Lookup processes:
+[{db_worker_pid, _value}] =
+    Registry.lookup(
+    :my_registry,
+    {:database_worker, 1}
+)

@@ -12,7 +12,7 @@ defmodule Todo.Cache do
 
   def init(_) do
     # Ensure db is started
-    Todo.Database.start_link(nil)
+    # Todo.Database.start_link(nil)
 
     {:ok, %{}}
   end
