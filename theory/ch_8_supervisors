@@ -113,3 +113,7 @@ child_spec:
         
         :brutal_kill
 
+
+
+!!
+Process.exit with reason :kill can't be intercepted by trapping exits

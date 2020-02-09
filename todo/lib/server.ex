@@ -1,9 +1,8 @@
 defmodule Todo.Server do
-  use GenServer
+  use GenServer, restart: :temporary
 
   def start_link(name) do
-    IO.puts("Starting Todo.Server")
-    GenServer.start_link(Todo.Server, name, [])
+    GenServer.start_link(Todo.Server, name, name: via_tuple(name))
   end
 
   def add_entry(todo_server, new_entry) do
@@ -14,18 +13,20 @@ defmodule Todo.Server do
     GenServer.call(todo_server, {:entries, date})
   end
 
+  defp via_tuple(name) do
+    Todo.ProcessRegistry.via_tuple({__MODULE__, name})
+  end
+
   @impl GenServer
   def init(name) do
+    IO.puts("Starting to-do server for #{name}")
     {:ok, {name, Todo.Database.get(name) || Todo.List.new()}}
   end
 
   @impl GenServer
   def handle_cast({:add_entry, new_entry}, {name, todo_list}) do
     new_list = Todo.List.add_entry(todo_list, new_entry)
-
-    # Store in db
     Todo.Database.store(name, new_list)
-
     {:noreply, {name, new_list}}
   end
 

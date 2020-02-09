@@ -24,3 +24,18 @@ Registry maps self() to {:database_worker, 1}
     :my_registry,
     {:database_worker, 1}
 )
+
+
+
+If you are using :via in start_link, ALWAYS USE :via in GenServer call/cast.
+
+** (CaseClauseError) no case clause matching: {:error, {:function_clause, [{GenServer, :whereis, [1], [file: 'lib/gen_server.ex', line: 1195]}, {GenServer, :call, 3, [file: 'lib/gen_server.ex', line: 1011]}, {Todo.Server, :init, 1, [file: 'lib/server.ex', line: 23]}, {:gen_server, :init_it, 2, [file: 'gen_server.erl', line: 374]}, {:gen_server, :init_it, 6, [file: 'gen_server.erl', line: 342]}, {:proc_lib, :init_p_do_apply, 3, [file: 'proc_lib.erl', line: 249]}]}}
+    (todo 0.1.0) lib/cache.ex:16: Todo.Cache.server_process/1
+    (todo 0.1.0) lib/test.ex:11: Todo.Test.list_existing/0
+
+In this case inside init has been error. So start_link failed!
+start_link calls init
+start_link calls init
+start_link calls init
+start_link calls init
+start_link calls init
