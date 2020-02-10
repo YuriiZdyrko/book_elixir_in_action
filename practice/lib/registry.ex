@@ -1,116 +1,118 @@
 defmodule MyRegistry do
-    @moduledoc """
-    Provides register/1 and whereis/1 methods
-    if process fails, deregisters it.
-    """
-    use GenServer
+  @moduledoc """
+  Provides register/1 and whereis/1 methods
+  if process fails, deregisters it.
+  """
+  use GenServer
 
-    def test do
-        __MODULE__.start_link(nil)
+  def test do
+    __MODULE__.start_link(nil)
 
-        {:ok, w1} = Agent.start_link(fn -> 
-            1
-         end)
-        {:ok, w2} = Agent.start_link(fn -> 
-            
-            2
+    {:ok, w1} =
+      Agent.start(fn ->
+        __MODULE__.register(:one)
+        1
+      end)
+
+    {:ok, w2} =
+      Agent.start(fn ->
+        __MODULE__.register(:two)
+        2
+      end)
+
+    {:ok, w3} =
+      Agent.start(fn ->
+        __MODULE__.register(:three)
+        3
+      end)
+
+    {:ok, w4} =
+      Agent.start(fn ->
+        __MODULE__.register(:four)
+
+        spawn_link(fn ->
+          Process.sleep(2000)
+          raise ":four error"
         end)
-        {:ok, w3} = Agent.start_link(fn -> 
-            
-            3 
-        end)
 
-        Process.sleep(5000)
+        3
+      end)
 
-        MyRegistry.register(w1, :one)
-        MyRegistry.register(w2, :two)
-        MyRegistry.register(w3, :three)
+    puts_inspect("self() pid", self())
+    puts_inspect("MyRegistry pid", Process.whereis(__MODULE__))
+    puts_inspect("MyRegistry state", __MODULE__.list())
 
-        __MODULE__.whereis(:two) |> IO.inspect()
-        Process.whereis(__MODULE__) |> IO.inspect()
+    Process.exit(w1, :normal)
+    Process.exit(w2, :nuked_from_the_orbit)
+    Process.exit(w3, :kill)
 
-        IO.inspect("exiting worker: ")
-        IO.inspect(w2)
+    Process.sleep(1)
 
-        count()
-        sleep()
+    puts_inspect("state", __MODULE__.list())
 
-        
-        Process.exit(w2, :not_normal)
-        IO.puts("after exit")
+    nil
+  end
 
-        count()
-        sleep()
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  end
 
-        __MODULE__.whereis(:two) |> IO.inspect()
+  def register(name) do
+    Process.link(Process.whereis(MyRegistry))
+    GenServer.cast(MyRegistry, {:register, self(), name})
+  end
 
-        IO.puts("registry:")
-        Process.whereis(__MODULE__) |> IO.inspect()
-    end
-    
-    def start_link(_) do
-        GenServer.start_link(__MODULE__, %{}, [name: __MODULE__])
-    end
+  def whereis(name) do
+    GenServer.call(__MODULE__, {:whereis, name})
+  end
 
-    def register(pid, name) do
-        Process.link(Process.whereis(MyRegistry))
-        GenServer.cast(__MODULE__, {:register, pid, name})
-    end
+  def list() do
+    GenServer.call(__MODULE__, :list)
+  end
 
-    def whereis(name) do
-        GenServer.call(__MODULE__, {:whereis, name})
-    end
+  # @impl GenServer
+  def init(map) do
+    Process.flag(:trap_exit, true)
+    {:ok, map}
+  end
 
-    # @impl GenServer
-    def init(map) do
-        IO.inspect("trapping exits")
-        Process.flag(:trap_exit, true)
-        {:ok, map}
-    end
+  # @impl GenServer
+  def handle_cast({:register, pid, name}, state) do
+    {:noreply, Map.put(state, name, pid)}
+  end
 
-    # @impl GenServer
-    def handle_cast({:register, pid, name}, state) do
-        {:noreply, Map.put(state, name, pid)}
-    end
+  # @impl GenServer
+  def handle_call({:whereis, name}, _, state) do
+    {:reply, state[name], state}
+  end
 
-    # @impl GenServer
-    def handle_call({:whereis, name}, _, state) do
-        {:reply, Map.fetch(state, name), state}
-    end
+  def handle_call(list, _, state) do
+    {:reply, state, state}
+  end
 
-    # @impl GenServer
-    def handle_info({:EXIT, pid, reason}, state) do
-        IO.puts(":EXIT handle_info")
+  # @impl GenServer
+  def handle_info({:EXIT, pid, reason}, state) do
+    new_state =
+      state
+      |> Enum.filter(fn {key, value} ->
+        value != pid
+      end)
+      |> Enum.into(%{})
 
-        new_state = state
-        |> Enum.filter(fn {key, value} -> 
-            value != pid
-        end)
-        |> Enum.into(%{})
+    puts_inspect(":EXIT reason", reason)
+    puts_inspect(":EXIT new_state", new_state)
 
-    
-        IO.puts("new_state")
-        count()
-        sleep()
+    {:noreply, new_state}
+  end
 
-        Process.sleep(5000)
-        # IO.inspect(new_state)
+  def handle_info(other, state) do
+    puts_inspect("other", other)
 
-        {:noreply, new_state}
-    end
-    def handle_info(other, state) do
-        IO.puts("other info")
-        IO.inspect(other)
+    {:noreply, state}
+  end
 
-        {:noreply, state}
-    end
-
-    def count() do
-        :erlang.system_info(:process_count)
-        |> IO.inspect
-    end
-
-    def sleep() do
-        Process.sleep(2000)
-    end
+  def puts_inspect(p, i) do
+    Process.sleep(100)
+    IO.inspect("#{p} > #{inspect(i)}")
+  end
 end
