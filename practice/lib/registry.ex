@@ -42,6 +42,8 @@ defmodule MyRegistry do
     puts_inspect("MyRegistry pid", Process.whereis(__MODULE__))
     puts_inspect("MyRegistry state", __MODULE__.list())
 
+    puts_inspect("MyRegistry whereis", __MODULE__.whereis(:two))
+
     Process.exit(w1, :normal)
     Process.exit(w2, :nuked_from_the_orbit)
     Process.exit(w3, :kill)
@@ -59,50 +61,56 @@ defmodule MyRegistry do
 
   def register(name) do
     Process.link(Process.whereis(MyRegistry))
-    GenServer.cast(MyRegistry, {:register, self(), name})
+    :ets.insert_new(RegistryETS, {name, self()})
+    # GenServer.cast(MyRegistry, {:register, self(), name})
   end
 
   def whereis(name) do
-    GenServer.call(__MODULE__, {:whereis, name})
+    :ets.lookup(RegistryETS, name)
+    # GenServer.call(__MODULE__, {:whereis, name})
   end
 
   def list() do
-    GenServer.call(__MODULE__, :list)
+    :ets.tab2list(RegistryETS)
+    # GenServer.call(__MODULE__, :list)
   end
 
   # @impl GenServer
   def init(map) do
     Process.flag(:trap_exit, true)
+    :ets.new(RegistryETS, [:named_table, :public, write_concurrency: true])
     {:ok, map}
   end
 
   # @impl GenServer
-  def handle_cast({:register, pid, name}, state) do
-    {:noreply, Map.put(state, name, pid)}
-  end
+#   def handle_cast({:register, pid, name}, state) do
+#     {:noreply, Map.put(state, name, pid)}
+#   end
 
-  # @impl GenServer
-  def handle_call({:whereis, name}, _, state) do
-    {:reply, state[name], state}
-  end
+#   # @impl GenServer
+#   def handle_call({:whereis, name}, _, state) do
+#     {:reply, state[name], state}
+#   end
 
-  def handle_call(list, _, state) do
-    {:reply, state, state}
-  end
+#   def handle_call(list, _, state) do
+#     {:reply, state, state}
+#   end
 
   # @impl GenServer
   def handle_info({:EXIT, pid, reason}, state) do
-    new_state =
-      state
-      |> Enum.filter(fn {key, value} ->
-        value != pid
-      end)
-      |> Enum.into(%{})
+    :ets.match_delete(RegistryETS, {:_, pid})
+
+    # state =
+    #   state
+    #   |> Enum.filter(fn {key, value} ->
+    #     value != pid
+    #   end)
+    #   |> Enum.into(%{})
 
     puts_inspect(":EXIT reason", reason)
-    puts_inspect(":EXIT new_state", new_state)
+    puts_inspect(":EXIT new_state", :ets.tab2list(RegistryETS))
 
-    {:noreply, new_state}
+    {:noreply, state}
   end
 
   def handle_info(other, state) do
