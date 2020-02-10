@@ -1,0 +1,20 @@
+Tasks can work in 2 modes:
+- awaited
+(Task.async/await)
+
+- non-awaited
+Task.start_link
+
+
+Non-awasks are useful for communication with external services, like
+metrics collection/sending, or one-off jobs.
+For cron jobs, use Quantum library.
+
+
+
+Agent = Genserver with only [init/1, handle_call/3, handle_cast/2] callbacks
+{:ok, pid} = Agent.start_link(fn -> init_state end, name: ...)
+Agent.cast(agent_pid, fn state -> new_state end)
+Agent.get(agent_pid, fn state -> response end)
+
+TLDR: NEVER USE AGENT. JUST USE GEN_SERVER!

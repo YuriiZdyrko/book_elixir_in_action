@@ -1,5 +1,0 @@
-Tasks can work in 2 modes:
-- awaited
-(Task.async/await)
-
-- non-awaited

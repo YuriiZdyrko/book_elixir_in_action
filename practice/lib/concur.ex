@@ -9,6 +9,18 @@ defmodule Concur do
         |> Enum.map(&(long_query.(&1)))
     end
 
+    def demonstrate_concurrent_with_tasks do
+        # in order
+        long_query = fn i -> 
+            Process.sleep(2000 + :rand.uniform(1000))
+            IO.inspect(i)
+        end
+
+        1..4
+        |> Enum.map(&Task.async(fn -> long_query.(&1) end))
+        |> Enum.map(&Task.await/1)
+    end
+
     def demonstrate_concurrent do
         parent = self()
 
